@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { useAuthStore } from '../store/authStore';
+import { BookOpen, User, Lock, LogIn } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface LoginForm {
+  username: string;
+  password: string;
+}
+
+const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>();
+
+  const onSubmit = async (data: LoginForm) => {
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        login(result.token, result.user);
+        toast.success('로그인 성공');
+        navigate('/dashboard');
+      } else {
+        toast.error(result.error || '로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('서버 연결에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="flex justify-center">
+            <div className="flex items-center space-x-2">
+              <BookOpen className="h-12 w-12 text-blue-600" />
+              <h1 className="text-3xl font-bold text-gray-900">EasyScore Pro</h1>
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
+            관리자 로그인
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            <Link
+              to="/student-login"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              학생이신가요? 여기를 클릭하여 학생 로그인
+            </Link>
+          </p>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                사용자명
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  {...register('username', { required: '사용자명을 입력해주세요.' })}
+                  type="text"
+                  autoComplete="username"
+                  className="input pl-10"
+                  placeholder="사용자명을 입력하세요"
+                />
+              </div>
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                비밀번호
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  {...register('password', { required: '비밀번호를 입력해주세요.' })}
+                  type="password"
+                  autoComplete="current-password"
+                  className="input pl-10"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn btn-primary w-full h-12 flex items-center justify-center space-x-2"
+            >
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <LogIn className="h-5 w-5" />
+                  <span>로그인</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              테스트 계정: admin / password
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default Login; 
